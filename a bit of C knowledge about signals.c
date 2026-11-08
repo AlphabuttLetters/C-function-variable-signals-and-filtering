@@ -1,11 +1,3 @@
-/* ==========================================================================
-   POLITECHNIKA WROCLAWSKA - PROJEKT I: PRZETWARZANIE SYGNALOW
-   ZESTAW 3 PROGRAMOW ZGODNYCH Z WYMAGANIAMI PROWADZACEGO (DR INZ. KORUBA)
-   
-   Wspolna modyfikacja szumu we wszystkich kodach:
-   - Maksymalny szum na podstawie wspolczynnika A (0.5 * |A|), ograniczony do max 5.0
-   - Dla kazdej probki wykonywane jest losowanie kierunku: w gore (+) lub w dol (-)
-   ========================================================================== */
 
 
 /* ==========================================================================
