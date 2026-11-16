@@ -1,0 +1,160 @@
+#define _CRT_SECURE_NO_WARNINGS 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX_ROZMIAR 256
+#define MAX_NAZWA 100
+
+
+struct ObrazPGM {
+    char nazwa[MAX_NAZWA];                 // Nazwa wczytanego pliku
+    char standard[3];                      // Magiczna liczba formatu, np. "P2"
+    int szerokosc;                         // Liczba kolumn (pikseli w wierszu)
+    int wysokosc;                          // Liczba wierszy
+    int max_szarosc;                       // Maksymalna wartość jasności (np. 255)
+    int piksele[MAX_ROZMIAR][MAX_ROZMIAR]; // Statyczna tablica pikseli
+};
+void pominKomentarze(FILE *plik) {
+    int znak;
+    while ((znak = fgetc(plik)) != EOF) {
+        if (isspace(znak)) {
+            continue; // Ignorujemy spacje, tabulatory i znaki nowej linii
+        }
+        if (znak == '#') {
+ 
+            while ((znak = fgetc(plik)) != '\n' && znak != EOF) {
+            }
+        } else {
+        
+            ungetc(znak, plik);
+            break;
+        }
+    }
+}
+
+
+int wczytajObraz(struct ObrazPGM *obraz) {
+    char nazwaPliku[MAX_NAZWA];
+
+    printf("Podaj nazwe pliku do odczytu (wraz z rozszerzeniem, np. testH.pgm): ");
+    scanf("%99s", nazwaPliku);
+
+    FILE *plik = fopen(nazwaPliku, "r");
+    if (plik == NULL) {
+        printf("BLAD: Nie udalo sie otworzyc pliku '%s'. Sprawdz czy plik istnieje.\n", nazwaPliku);
+        return 0; // Zwracamy 0 jako informację o niepowodzeniu
+    }
+
+
+    strcpy(obraz->nazwa, nazwaPliku);
+
+
+    pominKomentarze(plik);
+    fscanf(plik, "%2s", obraz->standard);
+
+    pominKomentarze(plik);
+    fscanf(plik, "%d", &obraz->szerokosc);
+
+    pominKomentarze(plik);
+    fscanf(plik, "%d", &obraz->wysokosc);
+
+    pominKomentarze(plik);
+    fscanf(plik, "%d", &obraz->max_szarosc);
+
+    if (obraz->szerokosc > MAX_ROZMIAR || obraz->wysokosc > MAX_ROZMIAR) {
+        printf("BLAD: Obraz (%dx%d) jest wiekszy niz maksymalny rozmiar tablicy (%dx%d).\n",
+               obraz->szerokosc, obraz->wysokosc, MAX_ROZMIAR, MAX_ROZMIAR);
+        fclose(plik);
+        return 0;
+    }
+
+    for (int i = 0; i < obraz->wysokosc; i++) {
+        for (int j = 0; j < obraz->szerokosc; j++) {
+            pominKomentarze(plik);
+            fscanf(plik, "%d", &obraz->piksele[i][j]);
+        }
+    }
+
+    fclose(plik);
+    printf("Sukces! Wczytano obraz '%s' (%dx%d, max szarosc: %d).\n",
+           obraz->nazwa, obraz->szerokosc, obraz->wysokosc, obraz->max_szarosc);
+    return 1; // Zwracamy 1 jako informację o sukcesie
+}
+
+
+void zapiszObraz(struct ObrazPGM *obraz) {
+    char nazwaPliku[MAX_NAZWA];
+
+    printf("Podaj nazwe pliku do zapisu (np. kopia_testH.pgm): ");
+    scanf("%99s", nazwaPliku);
+
+    FILE *plik = fopen(nazwaPliku, "w");
+    if (plik == NULL) {
+        printf("BLAD: Nie udalo sie utworzyc pliku '%s' do zapisu.\n", nazwaPliku);
+        return;
+    }
+
+
+    fprintf(plik, "%s\n", obraz->standard);
+    fprintf(plik, "%d %d\n", obraz->szerokosc, obraz->wysokosc);
+    fprintf(plik, "%d\n", obraz->max_szarosc);
+
+
+    for (int i = 0; i < obraz->wysokosc; i++) {
+        for (int j = 0; j < obraz->szerokosc; j++) {
+            fprintf(plik, "%d ", obraz->piksele[i][j]);
+        }
+        fprintf(plik, "\n"); // Nowa linia po każdym wierszu obrazu dla czytelności
+    }
+
+    fclose(plik);
+    printf("Sukces! Obraz zostal zapisany jako '%s'.\n", nazwaPliku);
+}
+
+int main() {
+
+    struct ObrazPGM aktualnyObraz;
+    int czyWczytano = 0; // Flaga informująca, czy w pamięci znajduje się już jakiś obraz
+    int wybor = 0;
+
+
+    do {
+        printf("\n=== PRZETWARZANIE OBRAZOW PGM (ETAP I) ===\n");
+        if (czyWczytano == 1) {
+            printf("Aktualnie wczytany obraz: %s (%dx%d)\n",
+                   aktualnyObraz.nazwa, aktualnyObraz.szerokosc, aktualnyObraz.wysokosc);
+        } else {
+            printf("Aktualnie brak wczytanego obrazu.\n");
+        }
+        printf("1. Wczytaj obraz z pliku (.pgm)\n");
+        printf("2. Zapisz obraz do pliku (.pgm)\n");
+        printf("0. Wyjscie z programu\n");
+        printf("Twoj wybor: ");
+        scanf("%d", &wybor);
+
+        switch (wybor) {
+            case 1:
+                if (wczytajObraz(&aktualnyObraz) == 1) {
+                    czyWczytano = 1;
+                }
+                break;
+            case 2:
+                if (czyWczytano == 1) {
+                    zapiszObraz(&aktualnyObraz);
+                } else {
+                    printf("Najpierw musisz wczytac obraz (opcja 1), zanim go zapiszesz!\n");
+                }
+                break;
+            case 0:
+                printf("Zamykanie programu...\n");
+                break;
+            default:
+                printf("Nieznana opcja. Wybierz 1, 2 lub 0.\n");
+                break;
+        }
+    } while (wybor != 0);
+
+    return 0;
+}
