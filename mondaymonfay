@@ -1,0 +1,84 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <string.h>
+
+#define MAX_ROZMIAR 256
+#define MAX_NAZWA 100
+
+struct ObrazPGM {
+    char nazwa[MAX_NAZWA];
+    char standard[3];
+    int szerokosc;
+    int wysokosc;
+    int max_szarosc;
+    int piksele[MAX_ROZMIAR][MAX_ROZMIAR];
+};
+
+int wczytajObraz(struct ObrazPGM *obraz, char nazwaPliku[]) {
+    FILE *plik = fopen(nazwaPliku, "r");
+    if (plik == NULL) {
+        printf("BLAD: Nie udalo sie otworzyc pliku '%s'.\n", nazwaPliku);
+        return 0;
+    }
+
+    strcpy(obraz->nazwa, nazwaPliku);
+
+    fscanf(plik, "%2s", obraz->standard);
+    fscanf(plik, "%d", &obraz->szerokosc);
+    fscanf(plik, "%d", &obraz->wysokosc);
+    fscanf(plik, "%d", &obraz->max_szarosc);
+
+    if (obraz->szerokosc > MAX_ROZMIAR || obraz->wysokosc > MAX_ROZMIAR) {
+        printf("BLAD: Obraz '%s' (%dx%d) jest za duzy dla tablicy (%dx%d).\n",
+               nazwaPliku, obraz->szerokosc, obraz->wysokosc, MAX_ROZMIAR, MAX_ROZMIAR);
+        fclose(plik);
+        return 0;
+    }
+
+    for (int i = 0; i < obraz->wysokosc; i++) {
+        for (int j = 0; j < obraz->szerokosc; j++) {
+            fscanf(plik, "%d", &obraz->piksele[i][j]);
+        }
+    }
+
+    fclose(plik);
+    printf("Wczytano obraz '%s' (%dx%d, max szarosc: %d).\n",
+           obraz->nazwa, obraz->szerokosc, obraz->wysokosc, obraz->max_szarosc);
+    return 1;
+}
+
+void zapiszObraz(struct ObrazPGM *obraz, char nazwaPliku[]) {
+    FILE *plik = fopen(nazwaPliku, "w");
+    if (plik == NULL) {
+        printf("BLAD: Nie udalo sie utworzyc pliku '%s'.\n", nazwaPliku);
+        return;
+    }
+
+    fprintf(plik, "%s\n", obraz->standard);
+    fprintf(plik, "%d %d\n", obraz->szerokosc, obraz->wysokosc);
+    fprintf(plik, "%d\n", obraz->max_szarosc);
+
+    for (int i = 0; i < obraz->wysokosc; i++) {
+        for (int j = 0; j < obraz->szerokosc; j++) {
+            fprintf(plik, "%d ", obraz->piksele[i][j]);
+        }
+        fprintf(plik, "\n");
+    }
+
+    fclose(plik);
+    printf("Zapisano obraz do pliku '%s'.\n", nazwaPliku);
+}
+
+int main() {
+    struct ObrazPGM obraz;
+
+    if (wczytajObraz(&obraz, "testH.pgm") == 1) {
+        zapiszObraz(&obraz, "kopia_testH.pgm");
+    }
+
+    if (wczytajObraz(&obraz, "testV.pgm") == 1) {
+        zapiszObraz(&obraz, "kopia_testV.pgm");
+    }
+
+    return 0;
+}
